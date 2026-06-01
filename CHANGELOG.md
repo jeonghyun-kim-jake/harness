@@ -5,11 +5,18 @@
 ## [Unreleased]
 
 ### Added
+- Claude, Cursor, Codex 런타임 타겟 매트릭스와 target별 산출물 계약 (`docs/runtime-targets.md`)
+- Cursor project rules 산출물(`.cursor/rules/*.mdc`)과 Codex `AGENTS.md` 포인터 지원 가이드
+- 루트 구축 가이드 `CURSOR.md`, `CODEX.md`
+- Claude Code 없이 Cursor/Codex에서 직접 하네스를 만드는 manual bootstrap 절차
 - 신규 에이전트/스킬 생성 전 중복 검토 단계 (Phase 3-0, Phase 4-0)
 - `references/agent-design-patterns.md` "에이전트 재사용 설계" 섹션
 - `references/skill-writing-guide.md` §9 "스킬 재사용 설계"
 
 ### Changed
+- Harness 핵심 워크플로우를 Claude 전용 `.claude/` 출력에서 런타임 타겟별 출력으로 확장
+- README와 Quickstart에 Cursor/Codex 생성 프롬프트와 검증 경로 추가
+- Plugin metadata에 Cursor/Codex 키워드 추가
 - Phase 선택 매트릭스에 3-0/4-0 명시
 - Phase 2-3에 재사용 검토 단계 포인터 추가
 - 산출물 체크리스트에 재사용 검토 항목 2개 추가

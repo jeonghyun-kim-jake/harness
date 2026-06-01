@@ -17,15 +17,15 @@
   <a href="#"><img src="https://img.shields.io/badge/README-EN%20%7C%20KO%20%7C%20JA-lightgrey" alt="i18n"></a>
 </p>
 
-# Harness — Claude Code를 위한 팀 아키텍처 팩토리
+# Harness — Claude Code, Cursor, Codex를 위한 팀 아키텍처 팩토리
 
 [English](README.md) | **한국어** | [日本語](README_JA.md)
 
-> **Harness는 Claude Code용 팀 아키텍처 팩토리입니다.** **"하네스 구성해줘"** (한국어) · **"build a harness for this project"** (English) · **"ハーネスを構成して"** (日本語) 한 문장으로, 플러그인이 도메인 설명을 에이전트 팀과 그들이 쓸 스킬로 변환합니다 — 사전 정의된 6가지 팀 아키텍처 패턴 중 하나를 골라서요.
+> **Harness는 Claude Code, Cursor, Codex용 팀 아키텍처 팩토리입니다.** **"하네스 구성해줘"** (한국어) · **"build a harness for this project"** (English) · **"ハーネスを構成して"** (日本語) 한 문장으로, 플러그인이 도메인 설명을 에이전트 팀과 그들이 쓸 스킬/룰/지침으로 변환합니다 — 사전 정의된 6가지 팀 아키텍처 패턴 중 하나를 골라서요.
 
 ## 개요
 
-Harness는 Claude Code의 에이전트 팀 시스템을 활용하여 복잡한 작업을 전문 에이전트 팀으로 분해·조율하는 아키텍처 도구다. "하네스 구성해줘"라고 말하면, 사용자의 도메인에 맞는 에이전트 정의(`.claude/agents/`)와 스킬(`.claude/skills/`)을 자동 생성한다.
+Harness는 복잡한 작업을 전문 에이전트 팀으로 분해·조율하는 아키텍처 도구다. Claude Code에서는 에이전트 정의(`.claude/agents/`)와 스킬(`.claude/skills/`)을 생성하고, Cursor/Codex에서는 같은 팀 설계를 프로젝트 룰과 `AGENTS.md` 지침으로 변환한다.
 
 ## 카테고리 — Harness는 어디에 서 있나요
 
@@ -126,7 +126,20 @@ Claude Code에서 다음과 같이 트리거한다:
 하네스 구성해줘
 하네스 설계해줘
 이 프로젝트에 맞는 에이전트 팀 구축해줘
+Cursor용 하네스 구성해줘
+Codex용 하네스 구성해줘
 ```
+
+### 런타임 타겟
+
+| 타겟 | 진입 파일 | 생성 산출물 |
+|------|-----------|-------------|
+| `claude` | `CLAUDE.md` | `.claude/agents/`, `.claude/skills/` |
+| `cursor` | `.cursor/rules/harness-{domain}.mdc` | Cursor project rules + `docs/harness/{domain}/` |
+| `codex` | `AGENTS.md` | Codex instructions + `docs/harness/{domain}/` |
+
+자세한 파일 계약은 [`docs/runtime-targets.md`](docs/runtime-targets.md)를 참고하세요.
+구축 절차는 [`CURSOR.md`](CURSOR.md)와 [`CODEX.md`](CODEX.md)를 참고하세요. Claude Code가 없어도 두 가이드의 수동 bootstrap 절차를 Cursor/Codex 안에서 직접 실행할 수 있습니다.
 
 ### 실행 모드
 
@@ -152,7 +165,7 @@ Claude Code에서 다음과 같이 트리거한다:
 
 ## 산출물
 
-하네스가 생성하는 파일:
+하네스가 생성하는 파일은 런타임 타겟에 따라 달라진다. Claude 타겟:
 
 ```
 프로젝트/
@@ -258,7 +271,9 @@ Harness는 Claude Code / 에이전트 프레임워크 생태계에서 혼자가 
 
 ## 요구사항
 
-- [에이전트 팀 기능 활성화](https://code.claude.com/docs/en/agent-teams): `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Claude 타겟: [에이전트 팀 기능 활성화](https://code.claude.com/docs/en/agent-teams): `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Cursor 타겟: `.cursor/rules/*.mdc` project rules
+- Codex 타겟: `AGENTS.md`
 
 ## FAQ
 
@@ -284,13 +299,12 @@ Harness는 Claude Code / 에이전트 프레임워크 생태계에서 혼자가 
 </details>
 
 <details>
-<summary><b>Q3. "Claude Code 전용"이 너무 좁은 것 아닌가요? Gemini·Codex는?</b></summary>
+<summary><b>Q3. 아직도 Claude Code 전용인가요?</b></summary>
 
-**A.** 현재 공식 런타임은 Claude Code 단일입니다. 같은 컨셉의 Codex 포트 [SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness)가 이미 공개되어 있어, 기존 Codex 팀은 그쪽에서 바로 시작할 수 있습니다. Harness는 "Claude Code 네이티브·깊게"를 택한 상태이며, 크로스 런타임 수요는 공존 저장소(meta-harness, harness-init, OpenRig)와의 연계 계획을 로드맵에 반영할 예정입니다.
+**A.** 아닙니다. Claude Code는 네이티브 Agent Teams를 사용할 수 있어 가장 풍부한 타겟이지만, Harness는 이제 같은 팀 설계를 Cursor project rules와 Codex `AGENTS.md` 지침으로도 내보낼 수 있습니다. Cursor/Codex 타겟은 `TeamCreate`/`SendMessage` 대신 파일 기반 handoff를 사용합니다.
 
 **Evidence:**
-- Codex 포트: [github.com/SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness)
-- 크로스 런타임 스캐폴더: [github.com/Gizele1/harness-init](https://github.com/Gizele1/harness-init)
+- 런타임 타겟 계약: [`docs/runtime-targets.md`](docs/runtime-targets.md)
 </details>
 
 ## 라이선스

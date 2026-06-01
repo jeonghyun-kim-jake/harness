@@ -1,17 +1,18 @@
 ---
 name: harness
-description: "하네스를 구성합니다. 전문 에이전트를 정의하며, 해당 에이전트가 사용할 스킬을 생성하는 메타 스킬. (1) '하네스 구성해줘', '하네스 구축해줘' 요청 시, (2) '하네스 설계', '하네스 엔지니어링' 요청 시, (3) 새로운 도메인/프로젝트에 대한 하네스 기반 자동화 체계를 구축할 때, (4) 하네스 구성을 재구성하거나 확장할 때, (5) '하네스 점검', '하네스 감사', '하네스 현황', '에이전트/스킬 동기화' 등 기존 하네스 운영/유지보수 요청 시 사용."
+description: "하네스를 구성합니다. Claude Code, Cursor, Codex 대상 전문 에이전트와 스킬/룰/지침을 생성하는 메타 스킬. (1) '하네스 구성해줘', '하네스 구축해줘' 요청 시, (2) 'Cursor/Codex용 하네스', '런타임 타겟별 하네스' 요청 시, (3) 새로운 도메인/프로젝트에 대한 하네스 기반 자동화 체계를 구축할 때, (4) 하네스 구성을 재구성하거나 확장할 때, (5) '하네스 점검', '하네스 감사', '하네스 현황', '에이전트/스킬 동기화' 등 기존 하네스 운영/유지보수 요청 시 사용."
 ---
 
 # Harness — Agent Team & Skill Architect
 
-도메인/프로젝트에 맞는 하네스를 구성하고, 각 에이전트의 역할을 정의하며, 에이전트가 사용할 스킬을 생성하는 메타 스킬.
+도메인/프로젝트에 맞는 하네스를 구성하고, 각 에이전트의 역할을 정의하며, 대상 런타임이 읽을 수 있는 스킬/룰/지침을 생성하는 메타 스킬.
 
 **핵심 원칙:**
-1. 에이전트 정의(`.claude/agents/`)와 스킬(`.claude/skills/`)을 생성한다.
-2. **에이전트 팀을 기본 실행 모드로 사용한다.**
-3. **CLAUDE.md에 하네스 포인터를 등록한다.** — 새 세션에서 오케스트레이터 스킬이 트리거되도록 최소한의 포인터(트리거 규칙 + 변경 이력)만 기록한다.
-4. **하네스는 고정물이 아니라 진화하는 시스템이다.** — 매 실행 후 피드백을 반영하고, 에이전트·스킬·CLAUDE.md를 지속 갱신한다.
+1. **런타임 타겟을 먼저 확정한다.** 기본값은 `claude`이며, 사용자가 Cursor/Codex를 언급하면 해당 타겟을 선택한다. 복수 타겟 요청 시 같은 설계를 각 타겟 산출물로 투영한다.
+2. **공통 설계와 런타임 산출물을 분리한다.** 에이전트 역할, 스킬, 오케스트레이션은 먼저 공통 모델로 설계하고, 마지막에 Claude/Cursor/Codex별 파일 구조로 materialize한다.
+3. **Claude Code에서는 에이전트 팀을 기본 실행 모드로 사용한다.** Cursor/Codex는 네이티브 `TeamCreate`가 없으므로 파일 기반 phase flow와 역할 전환 지침으로 같은 팀 아키텍처를 보존한다.
+4. **각 런타임의 세션 진입 파일에 하네스 포인터를 등록한다.** Claude는 `CLAUDE.md`, Cursor는 `.cursor/rules/*.mdc`, Codex는 `AGENTS.md`를 사용한다.
+5. **하네스는 고정물이 아니라 진화하는 시스템이다.** 매 실행 후 피드백을 반영하고, 에이전트·스킬·런타임 포인터를 지속 갱신한다.
 
 ## 워크플로우
 
@@ -19,8 +20,12 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
 
 하네스 스킬이 트리거되면 가장 먼저 기존 하네스 현황을 확인한다.
 
-1. `프로젝트/.claude/agents/`, `프로젝트/.claude/skills/`, `프로젝트/CLAUDE.md`를 읽는다
-2. 현황에 따라 실행 모드를 분기한다:
+1. 사용자 요청과 기존 파일을 보고 대상 런타임을 판별한다:
+   - `claude`: `.claude/agents/`, `.claude/skills/`, `CLAUDE.md`
+   - `cursor`: `.cursor/rules/`, `docs/harness/`
+   - `codex`: `AGENTS.md`, `docs/harness/`
+2. 선택된 런타임의 기존 하네스 산출물과 변경 이력을 읽는다.
+3. 현황에 따라 실행 모드를 분기한다:
    - **신규 구축**: 에이전트/스킬 디렉토리가 없거나 비어있음 → Phase 1부터 전체 실행
    - **기존 확장**: 기존 하네스가 있고 새 에이전트/스킬 추가 요청 → 아래 Phase 선택 매트릭스에 따라 필요한 Phase만 실행
    - **운영/유지보수**: 기존 하네스의 감사·수정·동기화 요청 → Phase 7-5 운영/유지보수 워크플로우로 이동
@@ -31,8 +36,8 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
    | 에이전트 추가 | 건너뜀 (Phase 0 결과 활용) | 배치 결정만 | 필수 (3-0 포함) | 전용 스킬 필요 시 (4-0 포함) | 오케스트레이터 수정 | 필수 |
    | 스킬 추가/수정 | 건너뜀 | 건너뜀 | 건너뜀 | 필수 (4-0 포함) | 연결 변경 시 | 필수 |
    | 아키텍처 변경 | 건너뜀 | 필수 | 영향받는 에이전트만 (3-0 포함) | 영향받는 스킬만 (4-0 포함) | 필수 | 필수 |
-3. 기존 에이전트/스킬 목록과 CLAUDE.md 기록을 대조하여 불일치(drift)를 감지한다
-4. 감사 결과를 사용자에게 요약 보고하고, 실행 계획을 확인받는다
+4. 기존 에이전트/스킬/룰 목록과 런타임 포인터 기록을 대조하여 불일치(drift)를 감지한다
+5. 감사 결과를 사용자에게 요약 보고하고, 실행 계획을 확인받는다
 
 ### Phase 1: 도메인 분석
 1. 사용자 요청에서 도메인/프로젝트 파악
@@ -43,9 +48,21 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
 
 ### Phase 2: 팀 아키텍처 설계
 
+#### 2-0. 런타임 타겟 선택
+
+런타임 타겟은 산출물 경로와 실행 표현을 결정한다. 사용자가 명시하지 않으면 `claude`를 기본값으로 하되, 생성 전 한 줄로 타겟을 확인한다.
+
+| Target | 세션 진입 파일 | 에이전트/역할 산출물 | 스킬/작업 산출물 | 실행 표현 |
+|--------|----------------|----------------------|------------------|-----------|
+| `claude` | `CLAUDE.md` | `.claude/agents/{name}.md` | `.claude/skills/{skill}/SKILL.md` | `TeamCreate`, `SendMessage`, `TaskCreate`, `Agent` |
+| `cursor` | `.cursor/rules/harness-{domain}.mdc` | `.cursor/rules/harness-{agent}.mdc` | `docs/harness/{domain}/skills/{skill}.md` | Cursor rule 기반 역할 전환 + 파일 기반 phase flow |
+| `codex` | `AGENTS.md` | `docs/harness/{domain}/agents/{name}.md` | `docs/harness/{domain}/skills/{skill}.md` | AGENTS 지침 기반 역할 전환 + 파일 기반 phase flow |
+
+복수 타겟이면 공통 설계는 한 번만 만들고, target별 산출물만 각각 생성한다. 런타임별 세부 계약은 `docs/runtime-targets.md`를 따른다.
+
 #### 2-1. 실행 모드 선택
 
-**에이전트 팀이 최우선 기본값이다.** 2개 이상의 에이전트가 협업할 때는 반드시 에이전트 팀을 먼저 검토한다. 팀원 간 직접 통신(SendMessage)과 공유 작업 목록(TaskCreate)으로 자체 조율하며, 발견 공유·상충 토론·누락 보완이 결과 품질을 높인다.
+**Claude Code에서는 에이전트 팀이 최우선 기본값이다.** 2개 이상의 에이전트가 협업할 때는 반드시 에이전트 팀을 먼저 검토한다. 팀원 간 직접 통신(SendMessage)과 공유 작업 목록(TaskCreate)으로 자체 조율하며, 발견 공유·상충 토론·누락 보완이 결과 품질을 높인다. Cursor/Codex에서는 네이티브 팀 API가 없으므로 같은 설계를 phase checklist, 역할별 지침, 파일 기반 handoff로 표현한다.
 
 | 모드 | 언제 사용 | 특성 |
 |------|----------|------|
@@ -54,9 +71,10 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
 | **하이브리드** | Phase마다 특성이 다를 때 — 예: 병렬 수집(서브) → 합의 기반 통합(팀) | Phase 단위로 팀/서브를 섞어 구성 |
 
 **의사결정 순서:**
-1. 먼저 에이전트 팀으로 설계 가능한지 검토한다 — 2명 이상이면 기본값
+1. 먼저 대상 런타임이 Claude인지 확인한다. Claude이고 2명 이상이면 에이전트 팀이 기본값이다.
 2. 팀 통신이 구조적으로 불필요하고(결과 전달만), 팀 오버헤드가 이득보다 클 때만 서브 에이전트 선택
-3. Phase별 특성이 확연히 다르면 하이브리드 고려 — 각 Phase의 실행 모드를 오케스트레이터에 명시
+3. Cursor/Codex에서는 모든 팀 통신을 `_workspace/` 파일과 단계별 체크리스트로 대체한다.
+4. Phase별 특성이 확연히 다르면 하이브리드 고려 — 각 Phase의 실행 모드를 오케스트레이터에 명시
 
 > 상세 비교표와 패턴별 의사결정 트리는 `references/agent-design-patterns.md`의 "실행 모드" 참조.
 
@@ -79,22 +97,22 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
 
 #### 3-0. 기존 에이전트 중복 검토
 
-신규 에이전트 생성 전, `프로젝트/.claude/agents/`의 기존 에이전트와 중복 여부를 확인한다. 하네스를 반복 구축하다 보면 역할이 겹치는 에이전트가 다른 이름으로 누적되기 쉽다.
+신규 에이전트 생성 전, 선택된 런타임의 기존 에이전트/역할 산출물과 중복 여부를 확인한다. 하네스를 반복 구축하다 보면 역할이 겹치는 에이전트가 다른 이름으로 누적되기 쉽다.
 
 > 중복 분류 기준과 재사용 설계는 `references/agent-design-patterns.md`의 "에이전트 재사용 설계" 참조.
 
-**모든 에이전트는 반드시 `프로젝트/.claude/agents/{name}.md` 파일로 정의한다.** 에이전트 정의 파일 없이 Agent 도구의 prompt에 역할을 직접 넣는 것은 금지한다. 이유:
+**모든 에이전트는 반드시 런타임별 파일로 정의한다.** 에이전트 정의 파일 없이 prompt에 역할을 직접 넣는 것은 금지한다. 이유:
 - 에이전트 정의가 파일로 존재해야 다음 세션에서 재사용 가능
 - 팀 통신 프로토콜이 명시되어야 에이전트 간 협업 품질 보장
 - 하네스의 핵심 가치는 에이전트(누가)와 스킬(어떻게)의 분리
 
-빌트인 타입(`general-purpose`, `Explore`, `Plan`)을 사용하더라도 에이전트 정의 파일은 생성한다. 빌트인 타입은 Agent 도구의 `subagent_type` 파라미터로 지정하고, 에이전트 정의 파일에는 역할·원칙·프로토콜을 담는다.
+Claude에서 빌트인 타입(`general-purpose`, `Explore`, `Plan`)을 사용하더라도 에이전트 정의 파일은 생성한다. 빌트인 타입은 Agent 도구의 `subagent_type` 파라미터로 지정하고, 에이전트 정의 파일에는 역할·원칙·프로토콜을 담는다. Cursor/Codex에서는 역할 파일이나 룰에 같은 내용을 담고, 실행자는 해당 역할 섹션을 따라 작업한다.
 
 **모델 설정:** 모든 에이전트는 `model: "opus"`를 사용한다. Agent 도구 호출 시 반드시 `model: "opus"` 파라미터를 명시한다. 하네스의 품질은 에이전트의 추론 능력에 직결되며, opus가 최고 품질을 보장한다.
 
 **팀 재구성:** 에이전트 팀은 세션당 한 팀만 활성화할 수 있지만, Phase 간에 팀을 해체하고 새 팀을 구성할 수 있다. 파이프라인 패턴처럼 Phase별로 다른 전문가 조합이 필요하면, 이전 팀의 산출물을 파일로 저장한 뒤 팀을 정리하고 새 팀을 생성한다.
 
-각 에이전트를 `프로젝트/.claude/agents/{name}.md`에 정의한다. 필수 섹션: 핵심 역할, 작업 원칙, 입력/출력 프로토콜, 에러 핸들링, 협업. 에이전트 팀 모드에서는 `## 팀 통신 프로토콜` 섹션을 추가하여 메시지 수신/발신 대상과 작업 요청 범위를 명시한다.
+각 에이전트를 target별 위치에 정의한다. 필수 섹션: 핵심 역할, 작업 원칙, 입력/출력 프로토콜, 에러 핸들링, 협업. Claude 에이전트 팀 모드에서는 `## 팀 통신 프로토콜` 섹션을 추가하여 메시지 수신/발신 대상과 작업 요청 범위를 명시한다. Cursor/Codex에서는 `## Handoff Protocol` 섹션을 추가하여 `_workspace/{phase}_{agent}_{artifact}.md` 파일 입출력을 명시한다.
 
 > 정의 템플릿과 실제 파일 전문은 `references/agent-design-patterns.md`의 "에이전트 정의 구조" + `references/team-examples.md` 참조.
 
@@ -106,11 +124,11 @@ description: "하네스를 구성합니다. 전문 에이전트를 정의하며,
 
 ### Phase 4: 스킬 생성
 
-각 에이전트가 사용할 스킬을 `프로젝트/.claude/skills/{name}/SKILL.md`에 생성한다. 상세 작성 가이드는 `references/skill-writing-guide.md` 참조.
+각 에이전트가 사용할 스킬을 target별 형식으로 생성한다. Claude는 `프로젝트/.claude/skills/{name}/SKILL.md`, Cursor/Codex는 `docs/harness/{domain}/skills/{name}.md`를 기본 위치로 사용한다. 상세 작성 가이드는 `references/skill-writing-guide.md` 참조.
 
 #### 4-0. 기존 스킬 중복 검토
 
-신규 스킬 생성 전, `프로젝트/.claude/skills/`의 기존 스킬과 중복 여부를 확인한다. 하네스를 반복 구축하다 보면 기능이 겹치는 스킬이 다른 이름으로 누적되기 쉽다.
+신규 스킬 생성 전, 선택된 런타임의 기존 스킬/룰/문서와 중복 여부를 확인한다. 하네스를 반복 구축하다 보면 기능이 겹치는 스킬이 다른 이름으로 누적되기 쉽다.
 
 > 중복 분류 기준과 일반화 패턴은 `references/skill-writing-guide.md`의 "스킬 재사용 설계" 참조.
 
@@ -255,11 +273,11 @@ Phase마다 다른 모드를 섞어 구성한다. 자주 쓰이는 조합:
 
 > 팀원이 많을수록 조율 오버헤드가 커진다. 3명의 집중된 팀원이 5명의 산만한 팀원보다 낫다.
 
-#### 5-4. CLAUDE.md 하네스 포인터 등록
+#### 5-4. 런타임 포인터 등록
 
-하네스 구성 완료 후, 프로젝트의 `CLAUDE.md`에 최소한의 포인터를 등록한다. CLAUDE.md는 새 세션마다 로딩되므로, 하네스 존재와 트리거 규칙만 기록하면 오케스트레이터 스킬이 나머지를 처리한다.
+하네스 구성 완료 후, 대상 런타임의 세션 진입 파일에 최소한의 포인터를 등록한다. 포인터에는 하네스 존재, 트리거 규칙, 변경 이력만 기록하고 상세 에이전트/스킬 목록은 target별 산출물에서 관리한다.
 
-**CLAUDE.md 템플릿:**
+**Claude `CLAUDE.md` 템플릿:**
 
 ````markdown
 ## 하네스: {도메인명}
@@ -275,6 +293,47 @@ Phase마다 다른 모드를 섞어 구성한다. 자주 쓰이는 조합:
 ````
 
 **CLAUDE.md에 넣지 않는 것:** 에이전트 목록, 스킬 목록, 디렉토리 구조, 실행 규칙 상세. 이유: 에이전트/스킬 목록은 오케스트레이터 스킬과 `.claude/agents/`, `.claude/skills/`에서 관리하므로 중복이다. 디렉토리 구조는 파일 시스템에서 직접 확인 가능하다. CLAUDE.md는 **포인터(트리거 규칙) + 변경 이력**만 담는다.
+
+**Cursor `.cursor/rules/harness-{domain}.mdc` 템플릿:**
+
+````markdown
+---
+description: Use this harness for {domain} work that needs the {pattern} team flow.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Harness: {domain}
+
+Use `docs/harness/{domain}/orchestrator.md` for phase order, role handoffs, and validation.
+Write intermediate artifacts under `_workspace/` using `{phase}_{agent}_{artifact}.md`.
+
+## Trigger
+Use this harness for {domain} planning, implementation, review, or follow-up work.
+
+## Change History
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| {YYYY-MM-DD} | Initial configuration | all | - |
+````
+
+**Codex `AGENTS.md` 템플릿:**
+
+````markdown
+## Harness: {domain}
+
+When working on {domain} tasks, follow `docs/harness/{domain}/orchestrator.md`.
+Use the role files in `docs/harness/{domain}/agents/` and the skill playbooks in `docs/harness/{domain}/skills/`.
+Write intermediate artifacts under `_workspace/` using `{phase}_{agent}_{artifact}.md`.
+
+**Trigger:** Use this harness for {domain} planning, implementation, review, or follow-up work. Directly answer simple factual questions.
+
+**Change History:**
+| Date | Change | Target | Reason |
+|------|--------|--------|--------|
+| {YYYY-MM-DD} | Initial configuration | all | - |
+````
 
 #### 5-5. 후속 작업 지원
 
@@ -430,11 +489,14 @@ Phase마다 다른 모드를 섞어 구성한다. 자주 쓰이는 조합:
 
 생성 완료 후 확인:
 
-- [ ] `프로젝트/.claude/agents/` — **에이전트 정의 파일 필수 생성** (빌트인 타입이라도 파일 생성 필수)
-- [ ] `프로젝트/.claude/skills/` — 스킬 파일들 (SKILL.md + references/)
+- [ ] `claude` 타겟이면 `프로젝트/.claude/agents/` 에이전트 정의 파일 생성 (빌트인 타입이라도 파일 생성 필수)
+- [ ] `claude` 타겟이면 `프로젝트/.claude/skills/` 스킬 파일 생성 (SKILL.md + references/)
+- [ ] `cursor` 타겟이면 `.cursor/rules/harness-{domain}.mdc`와 필요한 역할별 `.mdc` 룰 생성
+- [ ] `codex` 타겟이면 `AGENTS.md`에 하네스 포인터 등록
+- [ ] `cursor`/`codex` 타겟이면 `docs/harness/{domain}/agents/`, `docs/harness/{domain}/skills/`, `docs/harness/{domain}/orchestrator.md` 생성
 - [ ] 오케스트레이터 스킬 1개 (데이터 흐름 + 에러 핸들링 + 테스트 시나리오 포함)
 - [ ] 실행 모드 명시 (에이전트 팀 / 서브 에이전트 / 하이브리드 중 선택, 하이브리드면 Phase별 모드 기재)
-- [ ] 모든 Agent 호출에 `model: "opus"` 파라미터 명시
+- [ ] Claude 타겟이면 모든 Agent 호출에 `model: "opus"` 파라미터 명시
 - [ ] 신규 에이전트 생성 전 기존 에이전트 중복 검토 완료 (Phase 3-0)
 - [ ] 신규 스킬 생성 전 기존 스킬 중복 검토 완료 (Phase 4-0)
 - [ ] `.claude/commands/` — 아무것도 생성하지 않음
@@ -444,7 +506,7 @@ Phase마다 다른 모드를 섞어 구성한다. 자주 쓰이는 조합:
 - [ ] 테스트 프롬프트 2~3개로 실행 검증 완료
 - [ ] 트리거 검증 (should-trigger + should-NOT-trigger) 완료
 - [ ] **CLAUDE.md에 하네스 포인터 등록** (트리거 규칙 + 변경 이력)
-- [ ] **CLAUDE.md 변경 이력에 에이전트/스킬 추가/삭제/수정 기록**
+- [ ] **런타임 포인터 변경 이력에 에이전트/스킬/룰 추가·삭제·수정 기록**
 - [ ] **오케스트레이터 Phase 1에 컨텍스트 확인 단계** (초기/후속/부분 재실행 판별)
 
 ## 참고

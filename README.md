@@ -17,23 +17,23 @@
   <a href="#"><img src="https://img.shields.io/badge/README-EN%20%7C%20KO%20%7C%20JA-lightgrey" alt="i18n"></a>
 </p>
 
-# Harness — The Team-Architecture Factory for Claude Code
+# Harness — The Team-Architecture Factory for Claude Code, Cursor, and Codex
 
 **English** | [한국어](README_KO.md) | [日本語](README_JA.md)
 
-> **Harness is a team-architecture factory for Claude Code.** Say **"build a harness for this project"** (English) or **"하네스 구성해줘"** (한국어) or **"ハーネスを構成して"** (日本語), and the plugin turns your domain description into an agent team and the skills they use — picked from six pre-defined team-architecture patterns.
+> **Harness is a team-architecture factory for Claude Code, Cursor, and Codex.** Say **"build a harness for this project"** (English) or **"하네스 구성해줘"** (한국어) or **"ハーネスを構成して"** (日本語), and the plugin turns your domain description into an agent team and the skills they use — picked from six pre-defined team-architecture patterns and emitted for the runtime you choose.
 
 ## Overview
 
-Harness leverages Claude Code's agent team system to decompose complex tasks into coordinated teams of specialized agents. Say "build a harness for this project" and it automatically generates agent definitions (`.claude/agents/`) and skills (`.claude/skills/`) tailored to your domain.
+Harness decomposes complex tasks into coordinated teams of specialized agents. In Claude Code it generates native agent and skill files (`.claude/agents/`, `.claude/skills/`). For Cursor and Codex it emits runtime-specific rules and repository instructions that preserve the same team architecture through role files, playbooks, and file-based handoffs.
 
 ## Category — Where Harness Sits
 
-Harness lives at the **L3 Meta-Factory** layer of the Claude Code ecosystem — the layer that generates other harnesses rather than being one. Inside L3, we pick a specific sub-layer: **Team-Architecture Factory**.
+Harness lives at the **L3 Meta-Factory** layer of the AI coding-agent ecosystem — the layer that generates other harnesses rather than being one. Inside L3, we pick a specific sub-layer: **Team-Architecture Factory**.
 
 | Layer | What it does | Neighbors we coexist with |
 |-------|--------------|---------------------------|
-| **L3 — Meta-Factory / Team-Architecture Factory** (us) | Domain sentence → agent team + skills, via 6 pre-defined team patterns | — |
+| **L3 — Meta-Factory / Team-Architecture Factory** (us) | Domain sentence → agent team + skills/rules/instructions, via 6 pre-defined team patterns | — |
 | L3 — Meta-Factory / Runtime-Configuration Factory | Deterministic, repeatable runtime configurations | [coleam00/Archon](https://github.com/coleam00/Archon) |
 | L3 — Meta-Factory / Codex Runtime Port | Same concept, Codex runtime | [SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness) |
 | L2 — Cross-Harness Workflow | Standardize skills/rules/hooks across multiple harnesses | [affaan-m/ECC](https://github.com/affaan-m/everything-claude-code) |
@@ -54,7 +54,8 @@ Harness lives at the **L3 Meta-Factory** layer of the Claude Code ecosystem — 
 ## Key Features
 
 - **Agent Team Design** — 6 architectural patterns: Pipeline, Fan-out/Fan-in, Expert Pool, Producer-Reviewer, Supervisor, and Hierarchical Delegation
-- **Skill Generation** — Auto-generates skills with Progressive Disclosure for efficient context management
+- **Runtime Targets** — Emits Claude Code agents/skills, Cursor project rules, or Codex `AGENTS.md` instructions from the same design
+- **Skill Generation** — Auto-generates skills/playbooks with Progressive Disclosure for efficient context management
 - **Orchestration** — Inter-agent data passing, error handling, and team coordination protocols
 - **Validation** — Trigger verification, dry-run testing, and with-skill vs without-skill comparison tests
 
@@ -66,9 +67,9 @@ Phase 1: Domain Analysis
     ↓
 Phase 2: Team Architecture Design (Agent Teams vs Subagents)
     ↓
-Phase 3: Agent Definition Generation (.claude/agents/)
+Phase 3: Agent/Role Definition Generation
     ↓
-Phase 4: Skill Generation (.claude/skills/)
+Phase 4: Skill/Rule/Instruction Generation
     ↓
 Phase 5: Integration & Orchestration
     ↓
@@ -123,7 +124,20 @@ Trigger in Claude Code with prompts like:
 Build a harness for this project
 Design an agent team for this domain
 Set up a harness
+Build a Cursor harness for this project
+Build a Codex harness for this project
 ```
+
+### Runtime Targets
+
+| Target | Entry Point | Generated Artifacts |
+|--------|-------------|---------------------|
+| `claude` | `CLAUDE.md` | `.claude/agents/`, `.claude/skills/` |
+| `cursor` | `.cursor/rules/harness-{domain}.mdc` | Cursor project rules plus `docs/harness/{domain}/` playbooks |
+| `codex` | `AGENTS.md` | Codex instructions plus `docs/harness/{domain}/` playbooks |
+
+See [`docs/runtime-targets.md`](docs/runtime-targets.md) for the target contract and file layout.
+For build instructions, see [`CURSOR.md`](CURSOR.md) and [`CODEX.md`](CODEX.md). If Claude Code is not available, those guides include a manual bootstrap path that can be run directly in Cursor or Codex.
 
 ### Execution Modes
 
@@ -149,9 +163,11 @@ Set up a harness
 
 ## Output
 
-Files generated by Harness:
+Files generated by Harness depend on the selected runtime.
 
-```
+Claude target:
+
+```text
 your-project/
 ├── .claude/
 │   ├── agents/          # Agent definition files
@@ -164,6 +180,33 @@ your-project/
 │       └── build/
 │           ├── SKILL.md
 │           └── references/
+```
+
+Cursor target:
+
+```text
+your-project/
+├── .cursor/
+│   └── rules/
+│       ├── harness-{domain}.mdc
+│       └── harness-{agent}.mdc
+└── docs/
+    └── harness/{domain}/
+        ├── orchestrator.md
+        ├── agents/{agent-name}.md
+        └── skills/{skill-name}.md
+```
+
+Codex target:
+
+```text
+your-project/
+├── AGENTS.md
+└── docs/
+    └── harness/{domain}/
+        ├── orchestrator.md
+        ├── agents/{agent-name}.md
+        └── skills/{skill-name}.md
 ```
 
 ## Use Cases — Try These Prompts
@@ -262,7 +305,9 @@ Key finding: effectiveness scales with task complexity — the harder the task, 
 
 ## Requirements
 
-- [Agent Teams enabled](https://code.claude.com/docs/en/agent-teams): `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Claude target: [Agent Teams enabled](https://code.claude.com/docs/en/agent-teams): `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Cursor target: project rules support through `.cursor/rules/*.mdc`
+- Codex target: repository instructions through `AGENTS.md`
 
 ## FAQ
 
@@ -288,13 +333,12 @@ Key finding: effectiveness scales with task complexity — the harder the task, 
 </details>
 
 <details>
-<summary><b>Q3. Isn't "Claude Code only" too narrow? What about Gemini/Codex?</b></summary>
+<summary><b>Q3. Is Harness still Claude Code only?</b></summary>
 
-**A.** Currently the official runtime is Claude Code only. A Codex port of the same concept — [SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness) — is already public, so Codex teams can start there. Harness chose "Claude-Code-native, deep" over "multi-runtime, shallow"; cross-runtime collaboration with sibling repos (meta-harness, harness-init, OpenRig) is on the roadmap.
+**A.** No. Claude Code remains the richest target because it supports native Agent Teams, but Harness can now emit Cursor project rules and Codex `AGENTS.md` instructions from the same team design. Cursor/Codex targets use file-based handoffs instead of native `TeamCreate`/`SendMessage` APIs.
 
 **Evidence:**
-- Codex port: [github.com/SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness)
-- Cross-runtime scaffolder: [github.com/Gizele1/harness-init](https://github.com/Gizele1/harness-init)
+- Runtime target contract: [`docs/runtime-targets.md`](docs/runtime-targets.md)
 </details>
 
 ## License

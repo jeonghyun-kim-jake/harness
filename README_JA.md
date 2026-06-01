@@ -17,15 +17,15 @@
   <a href="#"><img src="https://img.shields.io/badge/README-EN%20%7C%20KO%20%7C%20JA-lightgrey" alt="i18n"></a>
 </p>
 
-# Harness — Claude Code のためのチームアーキテクチャファクトリー
+# Harness — Claude Code、Cursor、Codex のためのチームアーキテクチャファクトリー
 
 [English](README.md) | [한국어](README_KO.md) | **日本語**
 
-> **Harness は Claude Code 向けのチームアーキテクチャファクトリーです。** **「ハーネスを構成して」** (日本語) ·  **"build a harness for this project"** (English) · **"하네스 구성해줘"** (한국어) と伝えるだけで、プラグインがドメイン記述をエージェントチームとそのチームが使うスキルへと変換します — あらかじめ定義された 6 種類のチームアーキテクチャパターンから 1 つを選んで。
+> **Harness は Claude Code、Cursor、Codex 向けのチームアーキテクチャファクトリーです。** **「ハーネスを構成して」** (日本語) ·  **"build a harness for this project"** (English) · **"하네스 구성해줘"** (한국어) と伝えるだけで、プラグインがドメイン記述をエージェントチームとスキル・ルール・指示ファイルへ変換します — あらかじめ定義された 6 種類のチームアーキテクチャパターンから 1 つを選んで。
 
 ## 概要
 
-Harnessは、Claude Codeのエージェントチームシステムを活用し、複雑なタスクを専門エージェントチームに分解・統制するアーキテクチャツールです。「ハーネスを構成して」と伝えるだけで、ドメインに適したエージェント定義（`.claude/agents/`）とスキル（`.claude/skills/`）を自動生成します。
+Harnessは、複雑なタスクを専門エージェントチームに分解・統制するアーキテクチャツールです。Claude Code ではエージェント定義（`.claude/agents/`）とスキル（`.claude/skills/`）を生成し、Cursor/Codex では同じチーム設計をプロジェクトルールと `AGENTS.md` 指示へ変換します。
 
 ## カテゴリー — Harness はどこに位置するか
 
@@ -126,7 +126,20 @@ Claude Codeで以下のように呼び出します：
 Build a harness for this project
 Design an agent team for this domain
 Set up a harness
+Build a Cursor harness for this project
+Build a Codex harness for this project
 ```
+
+### ランタイムターゲット
+
+| Target | エントリーファイル | 生成物 |
+|--------|--------------------|--------|
+| `claude` | `CLAUDE.md` | `.claude/agents/`, `.claude/skills/` |
+| `cursor` | `.cursor/rules/harness-{domain}.mdc` | Cursor project rules + `docs/harness/{domain}/` |
+| `codex` | `AGENTS.md` | Codex instructions + `docs/harness/{domain}/` |
+
+詳細なファイル契約は [`docs/runtime-targets.md`](docs/runtime-targets.md) を参照してください。
+構築手順は [`CURSOR.md`](CURSOR.md) と [`CODEX.md`](CODEX.md) を参照してください。Claude Code がない場合でも、各ガイドの手動 bootstrap 手順を Cursor/Codex 内で直接実行できます。
 
 ### 実行モード
 
@@ -152,7 +165,7 @@ Set up a harness
 
 ## 出力
 
-Harnessが生成するファイル：
+Harness が生成するファイルはランタイムターゲットによって変わります。Claude ターゲット：
 
 ```
 your-project/
@@ -265,7 +278,9 @@ Harness は Claude Code / エージェントフレームワークのエコシス
 
 ## 要件
 
-- [Agent Teams機能の有効化](https://code.claude.com/docs/en/agent-teams)：`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Claude target: [Agent Teams機能の有効化](https://code.claude.com/docs/en/agent-teams)：`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- Cursor target: `.cursor/rules/*.mdc` project rules
+- Codex target: `AGENTS.md`
 
 ## FAQ
 
@@ -291,13 +306,12 @@ Harness は Claude Code / エージェントフレームワークのエコシス
 </details>
 
 <details>
-<summary><b>Q3. 「Claude Code 専用」は狭すぎませんか？ Gemini・Codex は？</b></summary>
+<summary><b>Q3. まだ Claude Code 専用ですか？</b></summary>
 
-**A.** 現時点で公式のランタイムは Claude Code のみです。同一コンセプトの Codex 移植 [SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness) がすでに公開されており、既存の Codex チームはそちらから開始できます。Harness は「Claude Code ネイティブ・深く」を選択しており、クロスランタイムの需要は共存リポジトリ（meta-harness、harness-init、OpenRig）との連携計画としてロードマップに反映される予定です。
+**A.** いいえ。Claude Code はネイティブ Agent Teams を使えるため最も豊富なターゲットですが、Harness は同じチーム設計を Cursor project rules と Codex `AGENTS.md` 指示としても出力できます。Cursor/Codex ターゲットでは `TeamCreate`/`SendMessage` の代わりにファイルベースの handoff を使います。
 
 **Evidence:**
-- Codex 移植: [github.com/SaehwanPark/meta-harness](https://github.com/SaehwanPark/meta-harness)
-- クロスランタイム・スキャフォルダー: [github.com/Gizele1/harness-init](https://github.com/Gizele1/harness-init)
+- Runtime target contract: [`docs/runtime-targets.md`](docs/runtime-targets.md)
 </details>
 
 ## ライセンス
